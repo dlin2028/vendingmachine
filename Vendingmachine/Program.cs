@@ -24,10 +24,10 @@ namespace Vendingmachine
             cents = cents % 10;
             Console.WriteLine($"here are {cents / 5} nickels");
             cents = cents % 5;
-            Console.WriteLine($"here are {cents / 5} pennies");
+            Console.WriteLine($"here are {cents} pennies");
 
         }
-        static void SubractChange(ref int cents, int centsToRemove, ref Dictionary<int, int> coins)
+        static void SubractChange(ref int cents, int maxCentsToRemove, ref Dictionary<int, int> coins)
         {
             List<int> coinTypes = new List<int>(coins.Keys);
             coinTypes.Sort();
@@ -35,18 +35,17 @@ namespace Vendingmachine
             for (int i = coinTypes.Count - 1; i >= 0; i--)
             {
                 int type = coinTypes[i];
-                if (type > centsToRemove)
+                if (type > maxCentsToRemove)
                 {
                     continue;
                 }
 
-                while (type > centsToRemove && coins[type] > 0)
+                while (type < maxCentsToRemove && coins[type] > 0)
                 {
                     coins[type]--;
-                    centsToRemove -= coins[type];
+                    maxCentsToRemove -= type;
+                    cents -= type;
                 }
-
-                cents -= centsToRemove;
             }
         }
 
@@ -77,7 +76,7 @@ namespace Vendingmachine
 
                     cents += value * 100;
 
-                    Console.WriteLine($"total:{cents / 100}.{cents % 100}");
+                    Console.WriteLine("total: $" + string.Format("{0:#.00}", Convert.ToDecimal(cents.ToString()) / 100));
                 }
 
                 while (true) //while value != 0
@@ -107,7 +106,7 @@ namespace Vendingmachine
                     }
 
                     cents += value;
-                    Console.WriteLine($"total:{cents / 100}.{cents % 100}");
+                    Console.WriteLine("total: $" + string.Format("{0:#.00}", Convert.ToDecimal(cents.ToString()) / 100));
                 }
 
                 while(true) //while value != 0
@@ -123,7 +122,7 @@ namespace Vendingmachine
                         continue;
                     }
 
-                    if (value < cents)
+                    if (value > cents)
                     {
                         Console.WriteLine("not enough money");
                         continue;
@@ -137,7 +136,8 @@ namespace Vendingmachine
                     {
                         Console.WriteLine("thanks for the $$$");
                     }
-                    SubractChange(ref cents, value,ref coins);
+                    cents -= value;
+                    GiveChange(ref cents, ref coins);
                     break;
                 }
             }
