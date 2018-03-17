@@ -6,7 +6,7 @@ using System.Text;
 using System.Threading.Tasks;
 
 namespace Vendingmachine
-{    
+{
     public class CoinValueAttribute : Attribute
     {
         public int Value { get; set; }
@@ -16,9 +16,20 @@ namespace Vendingmachine
             Value = value;
         }
     }
-
-    class ExampleVendingMachine
+    public class ItemPriceAttribute : Attribute
     {
+        public int Price { get; set; }
+
+        public ItemPriceAttribute(int value)
+        {
+            Price = value;
+        }
+    }
+
+    class VendingMachine
+    {
+        public List<int> acceptedBills;
+
         public enum CoinTypes
         {
             [CoinValue(25)]
@@ -34,14 +45,27 @@ namespace Vendingmachine
             Penny
         }
 
-        private int GetCoinValue(CoinTypes coin)
+        public enum ItemTypes
         {
-            Type coinType = typeof(CoinTypes);
-            FieldInfo coinInType = coinType.GetField(coin.ToString());
-            var coinValueAttribute = coinInType.GetCustomAttribute<CoinValueAttribute>(false);
-            //hi
-            return coinValueAttribute.Value;
+            [ItemPrice(30000)]
+            Issac = 1,
+            [ItemPrice(500)]
+            Thad,
+            [ItemPrice(1)]
+            Stan,
+            [ItemPrice(100)]
+            Alex
         }
+
+        public int Cents;
+
+        private SortedDictionary<ItemTypes, int> ItemInventory = new SortedDictionary<ItemTypes, int>()
+        {
+            {ItemTypes.Issac, 5 },
+            {ItemTypes.Alex, 5 },
+            {ItemTypes.Thad, 5 },
+            {ItemTypes.Stan, 5 }
+        };
 
         private SortedDictionary<CoinTypes, int> CoinInventory = new SortedDictionary<CoinTypes, int>()
         {
@@ -51,32 +75,207 @@ namespace Vendingmachine
             { CoinTypes.Penny, 2 }
         };
 
-        public void GetCoinsFromCustmer()
+        public VendingMachine()
+        {
+            acceptedBills = new List<int>();
+            acceptedBills.Add(1);
+            acceptedBills.Add(2);
+            acceptedBills.Add(5);
+            acceptedBills.Add(10);
+            acceptedBills.Add(20);
+            acceptedBills.Add(50);
+            acceptedBills.Add(100);
+
+            Cents = 0;
+        }
+
+        private int GetCoinValue(CoinTypes coin)
+        {
+            Type coinType = typeof(CoinTypes);
+            FieldInfo coinInType = coinType.GetField(coin.ToString());
+            var coinValueAttribute = coinInType.GetCustomAttribute<CoinValueAttribute>(false);
+            //hi
+            return coinValueAttribute.Value;
+        }
+
+        private int GetItemPrice(ItemTypes item)
+        {
+            Type itemType = typeof(ItemTypes);
+            FieldInfo itemField = itemType.GetField(item.ToString());
+            var itemPriceAttribute = itemField.GetCustomAttribute<ItemPriceAttribute>(false);
+            return itemPriceAttribute.Price;
+        }
+
+
+        public void GiveChange()
+        {
+
+            for (int i = 1; i < 5; i++)
+            {
+                CoinTypes coinType = (CoinTypes)i;
+                int coinValue = GetCoinValue(coinType);
+
+                int counter = 0;
+                while (Cents / coinValue > 0 && CoinInventory[coinType] > 0)
+                {
+                    Cents -= coinValue;
+                    CoinInventory[coinType]--;
+                    counter++;
+                }
+                Console.WriteLine($"Here is {counter} {coinType.ToString()}");
+            }
+        }
+
+        public void PrintInventory()
+        {
+            foreach (CoinTypes type in CoinInventory.Keys)
+            {
+                Console.WriteLine($"{type.ToString()}: {CoinInventory[type]}");
+            }
+        }
+
+        public int GetCoinsFromCustomer()
         {
             foreach (var item in CoinInventory)
             {
                 Console.WriteLine($"{(int)item.Key}: {item.Key.ToString()}");
             }
 
-            //TODO: Get user input
-            int userInput = 3;
+            int userInput = int.Parse(Console.ReadLine());
 
             if (userInput < 1 || userInput > 4)
             {
-                //TODO: Handle Invalid entry...
+                if (userInput == -1)
+                {
+                    GiveChange();
+                }
+                else if (userInput == -2)
+                {
+                    PrintInventory();
+                }
+                else
+                {
+                    Console.WriteLine("Thanks for the fake bill");
+                }
+
+                return userInput;
             }
 
             CoinTypes coinIn = (CoinTypes)userInput;
-            int value = GetCoinValue(coinIn);
+            Cents += GetCoinValue(coinIn);
+            CoinInventory[coinIn]++;
+            Console.WriteLine("Total: $" + string.Format("{0:#.00}", Convert.ToDecimal(Cents.ToString()) / 100));
+            return userInput;
+        }
+
+        public int GetBillsFromCustomer()
+        {
+            Console.WriteLine("Insert bill value");
+            int userInput = int.Parse(Console.ReadLine());
+
+            if (!acceptedBills.Contains(userInput))
+            {
+                if (userInput == -1)
+                {
+                    GiveChange();
+                }
+                else if (userInput == -2)
+                {
+                    PrintInventory();
+                }
+                else
+                {
+                    Console.WriteLine("Thanks for the fake bill");
+                }
+
+                return userInput;
+            }
+            Cents += userInput * 100;
+            Console.WriteLine("Total: $" + string.Format("{0:#.00}", Convert.ToDecimal(Cents.ToString()) / 100));
+            return userInput;
+        }
+
+        public int SellItems()
+        {
+            foreach (ItemTypes type in ItemInventory.Keys)
+            {
+                Console.WriteLine($"Type {(int)type} for {type.ToString()}; Stock: {ItemInventory[type]} Price: {GetItemPrice(type)}");
+            }
+            Console.WriteLine("Money: $" + string.Format("{0:#.00}", Convert.ToDecimal(Cents.ToString()) / 100));
+
+            int userInput = int.Parse(Console.ReadLine());
+
+            if (userInput < 1 || userInput > ItemInventory.Keys.Count)
+            {
+                if (userInput == -1) GiveChange();
+                if (userInput == -2) PrintInventory();
+
+                return userInput;
+            }
+            if (ItemInventory[(ItemTypes)userInput] < 0)
+            {
+                Console.WriteLine("Out of stock");
+            }
+            else if (Cents < GetItemPrice((ItemTypes)userInput))
+            {
+                Console.WriteLine("Not enough money");
+            }
+            else
+            {
+                Console.WriteLine("Thanks");
+                ItemInventory[(ItemTypes)userInput]--;
+                Cents -= GetItemPrice((ItemTypes)userInput);
+                GiveChange();
+            }
+            return userInput;
         }
     }
 
-
-
-
-
     class Program
     {
+        static void Main(string[] args)
+        {
+            VendingMachine machine = new VendingMachine();
+
+            Console.WriteLine("Type 0 to move on, -1 to get change, -2 to manage coin inventory");
+
+            machine.GetBillsFromCustomer;
+        }
+    }
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+/*
+ * 
         struct Item
         {
             public Item(int price, int stock)
@@ -241,5 +440,4 @@ namespace Vendingmachine
             }
 
         }
-    }
-}
+        */
