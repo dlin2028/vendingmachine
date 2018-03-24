@@ -153,9 +153,9 @@ namespace Vendingmachine
                 {
                     PrintInventory();
                 }
-                else
+                else if(userInput != 0)
                 {
-                    Console.WriteLine("Thanks for the fake bill");
+                    Console.WriteLine("Thanks for the fake coin");
                 }
 
                 return userInput;
@@ -183,7 +183,7 @@ namespace Vendingmachine
                 {
                     PrintInventory();
                 }
-                else
+                else if (userInput != 0)
                 {
                     Console.WriteLine("Thanks for the fake bill");
                 }
@@ -199,8 +199,9 @@ namespace Vendingmachine
         {
             foreach (ItemTypes type in ItemInventory.Keys)
             {
-                Console.WriteLine($"Type {(int)type} for {type.ToString()}; Stock: {ItemInventory[type]} Price: {GetItemPrice(type)}");
+                Console.WriteLine($"Type {(int)type} for {type.ToString()}; Stock: {ItemInventory[type]} Price: $" + string.Format("{0:#.00}", Convert.ToDecimal((GetItemPrice(type)).ToString()) / 100));
             }
+
             Console.WriteLine("Money: $" + string.Format("{0:#.00}", Convert.ToDecimal(Cents.ToString()) / 100));
 
             int userInput = int.Parse(Console.ReadLine());
@@ -212,20 +213,22 @@ namespace Vendingmachine
 
                 return userInput;
             }
-            if (ItemInventory[(ItemTypes)userInput] < 0)
+            if (ItemInventory[(ItemTypes)userInput] <= 0)
             {
                 Console.WriteLine("Out of stock");
             }
             else if (Cents < GetItemPrice((ItemTypes)userInput))
             {
                 Console.WriteLine("Not enough money");
+                string moneyShort = string.Format("{0:#.00}", Convert.ToDecimal((GetItemPrice((ItemTypes)userInput) - Cents).ToString()) / 100);
+
+                Console.WriteLine($"You need ${moneyShort}");
             }
             else
             {
                 Console.WriteLine("Thanks");
                 ItemInventory[(ItemTypes)userInput]--;
                 Cents -= GetItemPrice((ItemTypes)userInput);
-                GiveChange();
             }
             return userInput;
         }
@@ -239,7 +242,39 @@ namespace Vendingmachine
 
             Console.WriteLine("Type 0 to move on, -1 to get change, -2 to manage coin inventory");
 
-            machine.GetBillsFromCustomer;
+            while(true)
+            {
+                int input = int.MaxValue;
+
+                do
+                {
+                    input = machine.GetBillsFromCustomer();
+                }
+                while (input > 0);
+
+                if (input < 0)
+                {
+                    continue;
+                }
+
+                do
+                {
+                    input = machine.GetCoinsFromCustomer();
+                }
+                while (input > 0);
+
+                if (input < 0)
+                {
+                    continue;
+                }
+
+                do
+                {
+                    input = machine.SellItems();
+                }
+                while (input > 0);
+            }
+
         }
     }
 }
