@@ -1,6 +1,6 @@
 USE [DavidVendingMachine]
 GO
-/****** Object:  Table [dbo].[Inventories]    Script Date: 3/24/2018 12:34:00 PM ******/
+/****** Object:  Table [dbo].[Inventories]    Script Date: 4/8/2018 4:33:09 PM ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON

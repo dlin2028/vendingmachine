@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Data.SqlClient;
 using System.Linq;
 using System.Reflection;
 using System.Text;
@@ -131,6 +132,35 @@ namespace Vendingmachine
             foreach (CoinTypes type in CoinInventory.Keys)
             {
                 Console.WriteLine($"{type.ToString()}: {CoinInventory[type]}");
+            }
+            string connetionString = "Data Source=GMRMLTV;Initial Catalog=DavidVendingMachine;User ID=sa;Password=GreatMinds110";
+            var connection = new SqlConnection(connetionString);
+
+            var updateCoins = new SqlCommand("vend.UpdateCoins", connection);
+            updateCoins.CommandType = System.Data.CommandType.StoredProcedure;
+            updateCoins.Parameters.Add(new SqlParameter("@machineID", Guid.NewGuid()));
+            updateCoins.Parameters.Add(new SqlParameter("@pennies", CoinInventory[CoinTypes.Penny]));
+            updateCoins.Parameters.Add(new SqlParameter("@nickels", CoinInventory[CoinTypes.Nickel]));
+            updateCoins.Parameters.Add(new SqlParameter("@dimes", CoinInventory[CoinTypes.Dime]));
+            updateCoins.Parameters.Add(new SqlParameter("@quarters", CoinInventory[CoinTypes.Quarter]));
+
+            var updateItems = new SqlCommand("vend.UpdateItems", connection);
+            updateItems.Parameters.Add(ItemInventory.Keys);
+            updateItems.Parameters.Add(ItemInventory.Values);
+
+            try
+            {
+                connection.Open();
+
+                updateCoins.ExecuteNonQuery();
+                updateItems.ExecuteNonQuery();
+
+                connection.Close();
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine("Failed to reach server");
+                Console.WriteLine(ex.ToString());
             }
         }
 

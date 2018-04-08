@@ -1,6 +1,6 @@
 USE [DavidVendingMachine]
 GO
-/****** Object:  Table [dbo].[Change]    Script Date: 3/24/2018 12:34:00 PM ******/
+/****** Object:  Table [dbo].[Change]    Script Date: 4/8/2018 4:33:09 PM ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
@@ -17,9 +17,4 @@ CREATE TABLE [dbo].[Change](
 )WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON) ON [PRIMARY]
 ) ON [PRIMARY]
 
-GO
-ALTER TABLE [dbo].[Change]  WITH CHECK ADD  CONSTRAINT [FK_Change_Machines] FOREIGN KEY([ID])
-REFERENCES [dbo].[Machines] ([ID])
-GO
-ALTER TABLE [dbo].[Change] CHECK CONSTRAINT [FK_Change_Machines]
 GO

@@ -1,18 +1,18 @@
 USE [DavidVendingMachine]
 GO
-/****** Object:  Table [dbo].[Machines]    Script Date: 3/24/2018 12:34:00 PM ******/
+/****** Object:  Table [dbo].[Machines]    Script Date: 4/8/2018 4:33:09 PM ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
 CREATE TABLE [dbo].[Machines](
-	[ID] [int] IDENTITY(1,1) NOT FOR REPLICATION NOT NULL,
-	[Name] [nchar](10) NOT NULL,
-	[Location] [geography] NOT NULL,
+	[Name] [nchar](10) NULL,
+	[Location] [geography] NULL,
 	[Quarters] [int] NOT NULL,
 	[Dimes] [int] NOT NULL,
 	[Nickels] [int] NOT NULL,
 	[Pennies] [int] NOT NULL,
+	[ID] [uniqueidentifier] NOT NULL,
  CONSTRAINT [PK_Machines] PRIMARY KEY CLUSTERED 
 (
 	[ID] ASC
