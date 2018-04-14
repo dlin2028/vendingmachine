@@ -1,6 +1,6 @@
 USE [DavidVendingMachine]
 GO
-/****** Object:  StoredProcedure [vend].[UpdateCoins]    Script Date: 4/8/2018 4:33:09 PM ******/
+/****** Object:  StoredProcedure [vend].[UpdateCoins]    Script Date: 4/14/2018 12:32:29 PM ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON

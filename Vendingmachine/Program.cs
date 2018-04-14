@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Data;
 using System.Data.SqlClient;
 using System.Linq;
 using System.Reflection;
@@ -30,6 +31,7 @@ namespace Vendingmachine
     class VendingMachine
     {
         public List<int> acceptedBills;
+        Guid guid = Guid.NewGuid();
 
         public enum CoinTypes
         {
@@ -107,6 +109,13 @@ namespace Vendingmachine
             return itemPriceAttribute.Price;
         }
 
+        private void SetItemPrice(ItemTypes item, int price)
+        {
+            Type itemType = typeof(ItemTypes);
+            FieldInfo itemField = itemType.GetField(item.ToString());
+            itemField.GetCustomAttribute<ItemPriceAttribute>(false).Price = price;
+        }
+
 
         public void GiveChange()
         {
@@ -127,8 +136,9 @@ namespace Vendingmachine
             }
         }
 
-        public void PrintInventory()
+        public void UpdateData()
         {
+            Console.WriteLine("------------Coins------------");
             foreach (CoinTypes type in CoinInventory.Keys)
             {
                 Console.WriteLine($"{type.ToString()}: {CoinInventory[type]}");
@@ -138,30 +148,72 @@ namespace Vendingmachine
 
             var updateCoins = new SqlCommand("vend.UpdateCoins", connection);
             updateCoins.CommandType = System.Data.CommandType.StoredProcedure;
-            updateCoins.Parameters.Add(new SqlParameter("@machineID", Guid.NewGuid()));
+            updateCoins.Parameters.Add(new SqlParameter("@machineID", guid));
             updateCoins.Parameters.Add(new SqlParameter("@pennies", CoinInventory[CoinTypes.Penny]));
             updateCoins.Parameters.Add(new SqlParameter("@nickels", CoinInventory[CoinTypes.Nickel]));
             updateCoins.Parameters.Add(new SqlParameter("@dimes", CoinInventory[CoinTypes.Dime]));
             updateCoins.Parameters.Add(new SqlParameter("@quarters", CoinInventory[CoinTypes.Quarter]));
 
-            var updateItems = new SqlCommand("vend.UpdateItems", connection);
-            updateItems.Parameters.Add(ItemInventory.Keys);
-            updateItems.Parameters.Add(ItemInventory.Values);
+            Console.WriteLine("------------Prices------------");
+            var updatePrices = new SqlCommand("vend.GetPrices", connection);
+
+            Console.WriteLine("------------Items------------");
+            List<SqlCommand> itemCommands = new List<SqlCommand>();
+            foreach (ItemTypes type in ItemInventory.Keys)
+            {
+                Console.WriteLine($"{type.ToString()}: {ItemInventory[type]}");
+
+                var command = new SqlCommand("vend.UpdateStock", connection);
+                command.CommandType = System.Data.CommandType.StoredProcedure;
+                command.Parameters.Add(new SqlParameter("@MachineID", guid));
+                command.Parameters.Add(new SqlParameter("@ItemName", type.ToString()));
+                command.Parameters.Add(new SqlParameter("@Count", ItemInventory[type]));
+                itemCommands.Add(command);
+            }
+
 
             try
             {
                 connection.Open();
 
                 updateCoins.ExecuteNonQuery();
-                updateItems.ExecuteNonQuery();
+                Console.WriteLine("coins updated successfully");
+                Console.WriteLine("--------------------------------------------------------");
+
+                SqlDataAdapter adapter = new SqlDataAdapter(updatePrices);
+                DataTable table = new DataTable();
+                adapter.Fill(table);
+                
+                foreach (ItemTypes t in Enum.GetValues(typeof(ItemTypes)))
+                {
+                    foreach(DataRow row in table.Rows)
+                    {
+                        if(row.Field<string>("Name") == t.ToString())
+                        {
+                            SetItemPrice(t, row.Field<int>("Price"));
+                            break;
+                        }
+                    }
+                 
+                }
+
+                Console.WriteLine("prices updated successfully");
+                Console.WriteLine("--------------------------------------------------------");
+
+                foreach (SqlCommand command in itemCommands)
+                {
+                    command.ExecuteNonQuery();
+                }
+                Console.WriteLine("items updated successfully");
 
                 connection.Close();
             }
             catch (Exception ex)
             {
-                Console.WriteLine("Failed to reach server");
                 Console.WriteLine(ex.ToString());
             }
+
+
         }
 
         public int GetCoinsFromCustomer()
@@ -181,9 +233,9 @@ namespace Vendingmachine
                 }
                 else if (userInput == -2)
                 {
-                    PrintInventory();
+                    UpdateData();
                 }
-                else if(userInput != 0)
+                else if (userInput != 0)
                 {
                     Console.WriteLine("Thanks for the fake coin");
                 }
@@ -211,7 +263,7 @@ namespace Vendingmachine
                 }
                 else if (userInput == -2)
                 {
-                    PrintInventory();
+                    UpdateData();
                 }
                 else if (userInput != 0)
                 {
@@ -239,7 +291,7 @@ namespace Vendingmachine
             if (userInput < 1 || userInput > ItemInventory.Keys.Count)
             {
                 if (userInput == -1) GiveChange();
-                if (userInput == -2) PrintInventory();
+                if (userInput == -2) UpdateData();
 
                 return userInput;
             }
@@ -272,7 +324,7 @@ namespace Vendingmachine
 
             Console.WriteLine("Type 0 to move on, -1 to get change, -2 to manage coin inventory");
 
-            while(true)
+            while (true)
             {
                 int input = int.MaxValue;
 
