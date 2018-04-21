@@ -18,15 +18,6 @@ namespace Vendingmachine
             Value = value;
         }
     }
-    public class ItemPriceAttribute : Attribute
-    {
-        public int Price { get; set; }
-
-        public ItemPriceAttribute(int value)
-        {
-            Price = value;
-        }
-    }
 
     class VendingMachine
     {
@@ -48,26 +39,36 @@ namespace Vendingmachine
             Penny
         }
 
-        public enum ItemTypes
-        {
-            [ItemPrice(30000)]
-            Issac = 1,
-            [ItemPrice(500)]
-            Thad,
-            [ItemPrice(1)]
-            Stan,
-            [ItemPrice(100)]
-            Alex
+
+        public class Item {
+
+            public int Price;
+            public int Stock;
+
+            public Item(int price, int stock)
+            {
+                Price = price;
+                Stock = stock;
+            }
+            
+            public void SetPrice(int price)
+            {
+                Price = price;
+            }
+            public void SetStock(int stock)
+            {
+                Stock = stock;
+            }
         }
 
         public int Cents;
 
-        private SortedDictionary<ItemTypes, int> ItemInventory = new SortedDictionary<ItemTypes, int>()
+        private SortedDictionary<string, Item> ItemInventory = new SortedDictionary<string, Item>()
         {
-            {ItemTypes.Issac, 5 },
-            {ItemTypes.Alex, 5 },
-            {ItemTypes.Thad, 5 },
-            {ItemTypes.Stan, 5 }
+            {"Issac", new Item(30000, 5)},
+            {"Stan", new Item(1, 5)},
+            {"Thad", new Item(10, 5)},
+            {"Alex", new Item(500, 5)}
         };
 
         private SortedDictionary<CoinTypes, int> CoinInventory = new SortedDictionary<CoinTypes, int>()
@@ -100,23 +101,7 @@ namespace Vendingmachine
             //hi
             return coinValueAttribute.Value;
         }
-
-        private int GetItemPrice(ItemTypes item)
-        {
-            Type itemType = typeof(ItemTypes);
-            FieldInfo itemField = itemType.GetField(item.ToString());
-            var itemPriceAttribute = itemField.GetCustomAttribute<ItemPriceAttribute>(false);
-            return itemPriceAttribute.Price;
-        }
-
-        private void SetItemPrice(ItemTypes item, int price)
-        {
-            Type itemType = typeof(ItemTypes);
-            FieldInfo itemField = itemType.GetField(item.ToString());
-            itemField.GetCustomAttribute<ItemPriceAttribute>(false).Price = price;
-        }
-
-
+        
         public void GiveChange()
         {
 
@@ -159,15 +144,15 @@ namespace Vendingmachine
 
             Console.WriteLine("------------Items------------");
             List<SqlCommand> itemCommands = new List<SqlCommand>();
-            foreach (ItemTypes type in ItemInventory.Keys)
+            foreach (string name in ItemInventory.Keys)
             {
-                Console.WriteLine($"{type.ToString()}: {ItemInventory[type]}");
+                Console.WriteLine($"{name}: {ItemInventory[name].Stock}");
 
                 var command = new SqlCommand("vend.UpdateStock", connection);
                 command.CommandType = System.Data.CommandType.StoredProcedure;
                 command.Parameters.Add(new SqlParameter("@MachineID", guid));
-                command.Parameters.Add(new SqlParameter("@ItemName", type.ToString()));
-                command.Parameters.Add(new SqlParameter("@Count", ItemInventory[type]));
+                command.Parameters.Add(new SqlParameter("@ItemName", name));
+                command.Parameters.Add(new SqlParameter("@Count", ItemInventory[name].Stock));
                 itemCommands.Add(command);
             }
 
@@ -184,17 +169,16 @@ namespace Vendingmachine
                 DataTable table = new DataTable();
                 adapter.Fill(table);
                 
-                foreach (ItemTypes t in Enum.GetValues(typeof(ItemTypes)))
+                foreach (string name in ItemInventory.Keys)
                 {
                     foreach(DataRow row in table.Rows)
                     {
-                        if(row.Field<string>("Name") == t.ToString())
+                        if(row.Field<string>("Name").ToLower().Contains(name.ToLower()))
                         {
-                            SetItemPrice(t, row.Field<int>("Price"));
+                            ItemInventory[name].SetPrice(row.Field<int>("Price"));
                             break;
                         }
                     }
-                 
                 }
 
                 Console.WriteLine("prices updated successfully");
@@ -279,9 +263,10 @@ namespace Vendingmachine
 
         public int SellItems()
         {
-            foreach (ItemTypes type in ItemInventory.Keys)
+            int index = 1;
+            foreach (string type in ItemInventory.Keys)
             {
-                Console.WriteLine($"Type {(int)type} for {type.ToString()}; Stock: {ItemInventory[type]} Price: $" + string.Format("{0:#.00}", Convert.ToDecimal((GetItemPrice(type)).ToString()) / 100));
+                Console.WriteLine($"Type {index++} for {type}; Stock: {ItemInventory[type].Stock} Price: $" + string.Format("{0:#.00}", Convert.ToDecimal(ItemInventory[type].Price.ToString()) / 100));
             }
 
             Console.WriteLine("Money: $" + string.Format("{0:#.00}", Convert.ToDecimal(Cents.ToString()) / 100));
@@ -295,22 +280,23 @@ namespace Vendingmachine
 
                 return userInput;
             }
-            if (ItemInventory[(ItemTypes)userInput] <= 0)
+            string name = ItemInventory.Keys.ToArray()[userInput - 1];
+            if (ItemInventory[name].Price <= 0)
             {
                 Console.WriteLine("Out of stock");
             }
-            else if (Cents < GetItemPrice((ItemTypes)userInput))
+            else if (Cents < ItemInventory[name].Price)
             {
                 Console.WriteLine("Not enough money");
-                string moneyShort = string.Format("{0:#.00}", Convert.ToDecimal((GetItemPrice((ItemTypes)userInput) - Cents).ToString()) / 100);
+                string moneyShort = string.Format("{0:#.00}", Convert.ToDecimal((ItemInventory[name].Price - Cents).ToString()) / 100);
 
                 Console.WriteLine($"You need ${moneyShort}");
             }
             else
             {
                 Console.WriteLine("Thanks");
-                ItemInventory[(ItemTypes)userInput]--;
-                Cents -= GetItemPrice((ItemTypes)userInput);
+                ItemInventory[name].SetStock(ItemInventory[name].Stock - 1);
+                Cents -= ItemInventory[name].Price;
             }
             return userInput;
         }
