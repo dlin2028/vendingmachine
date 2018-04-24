@@ -1,11 +1,10 @@
 USE [DavidVendingMachine]
 GO
-/****** Object:  StoredProcedure [vend].[UpdateStock]    Script Date: 4/14/2018 12:32:29 PM ******/
+/****** Object:  StoredProcedure [vend].[UpdateStock]    Script Date: 4/24/2018 4:44:53 PM ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-
 
 -- =============================================
 -- Author:		<Author,,Name>
@@ -25,20 +24,10 @@ BEGIN
 	DECLARE @itemID int
 	SET @itemID = (SELECT TOP 1 ItemID FROM Items WHERE @ItemName = Name)
 
-	IF EXISTS(SELECT * FROM MachineItems WHERE MachineID = @MachineID and ItemID = @itemID)
-	BEGIN
-		UPDATE MachineItems
-		SET Count = @Count 
-		WHERE MachineID = @MachineID and ItemID = @itemID 
-	END
-	ELSE
-	BEGIN
-		INSERT INTO MachineItems(ItemID, Count, MachineID)
-		VALUES (@itemID, @Count, @MachineID)
-	END
-
+	UPDATE MachineItems
+	SET Count = @Count 
+	WHERE MachineID = @MachineID and ItemID = @itemID 
 END
-
 
 
 

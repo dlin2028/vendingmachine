@@ -1,22 +1,19 @@
 USE [DavidVendingMachine]
 GO
-/****** Object:  StoredProcedure [dbo].[UpdateCoins]    Script Date: 4/8/2018 4:33:09 PM ******/
+/****** Object:  StoredProcedure [vend].[Register]    Script Date: 4/24/2018 4:44:53 PM ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
 -- =============================================
--- Author:		Name
+-- Author:		
 -- Create date: 
 -- Description:	
 -- =============================================
-CREATE PROCEDURE [dbo].[UpdateCoins] 
+CREATE PROCEDURE [vend].[Register] 
 	-- Add the parameters for the stored procedure here
-	@machineID uniqueidentifier, 
-	@pennies int = 0,
-	@nickels int,
-	@dimes int,
-	@quarters int
+	@name nchar(10) = 0, 
+	@machineID uniqueidentifier
 AS
 BEGIN
 	-- SET NOCOUNT ON added to prevent extra result sets from
@@ -24,9 +21,22 @@ BEGIN
 	SET NOCOUNT ON;
 
     -- Insert statements for procedure here
-	UPDATE Machines
-	SET Pennies = @pennies, Nickels = @nickels, Dimes = @dimes, Quarters = @quarters
-	WHERE @machineID = ID
-END
 
+	IF EXISTS (SELECT 1 FROM Machines WHERE ID = @machineID)
+	BEGIN
+
+	UPDATE Machines
+	SET Name = @name
+	WHERE @machineID = ID
+
+	END
+	ELSE
+	BEGIN
+
+	INSERT INTO Machines (ID, Name)
+	 VALUES (@machineID, @name)
+
+	END
+
+END
 GO

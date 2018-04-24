@@ -1,6 +1,6 @@
 USE [DavidVendingMachine]
 GO
-/****** Object:  StoredProcedure [vend].[GetPrices]    Script Date: 4/14/2018 12:32:29 PM ******/
+/****** Object:  StoredProcedure [vend].[GetPrices]    Script Date: 4/24/2018 4:44:53 PM ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON

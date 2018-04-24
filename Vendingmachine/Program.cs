@@ -22,7 +22,7 @@ namespace Vendingmachine
     class VendingMachine
     {
         public List<int> acceptedBills;
-        Guid guid = Guid.NewGuid();
+        public Guid guid;
 
         public enum CoinTypes
         {
@@ -40,7 +40,8 @@ namespace Vendingmachine
         }
 
 
-        public class Item {
+        public class Item
+        {
 
             public int Price;
             public int Stock;
@@ -50,7 +51,7 @@ namespace Vendingmachine
                 Price = price;
                 Stock = stock;
             }
-            
+
             public void SetPrice(int price)
             {
                 Price = price;
@@ -101,7 +102,7 @@ namespace Vendingmachine
             //hi
             return coinValueAttribute.Value;
         }
-        
+
         public void GiveChange()
         {
 
@@ -128,7 +129,7 @@ namespace Vendingmachine
             {
                 Console.WriteLine($"{type.ToString()}: {CoinInventory[type]}");
             }
-            string connetionString = "Data Source=GMRMLTV;Initial Catalog=DavidVendingMachine;User ID=sa;Password=GreatMinds110";
+            string connetionString = "Data Source=DESKTOP-BVGJEU8;Initial Catalog=DavidVendingMachine;persist security info=True;Integrated Security = SSPI;";//User ID=sa;Password=GreatMinds110";
             var connection = new SqlConnection(connetionString);
 
             var updateCoins = new SqlCommand("vend.UpdateCoins", connection);
@@ -168,12 +169,12 @@ namespace Vendingmachine
                 SqlDataAdapter adapter = new SqlDataAdapter(updatePrices);
                 DataTable table = new DataTable();
                 adapter.Fill(table);
-                
+
                 foreach (string name in ItemInventory.Keys)
                 {
-                    foreach(DataRow row in table.Rows)
+                    foreach (DataRow row in table.Rows)
                     {
-                        if(row.Field<string>("Name").ToLower().Contains(name.ToLower()))
+                        if (row.Field<string>("Name").ToLower().Contains(name.ToLower()))
                         {
                             ItemInventory[name].SetPrice(row.Field<int>("Price"));
                             break;
@@ -281,7 +282,7 @@ namespace Vendingmachine
                 return userInput;
             }
             string name = ItemInventory.Keys.ToArray()[userInput - 1];
-            if (ItemInventory[name].Price <= 0)
+            if (ItemInventory[name].Stock <= 0)
             {
                 Console.WriteLine("Out of stock");
             }
@@ -307,6 +308,28 @@ namespace Vendingmachine
         static void Main(string[] args)
         {
             VendingMachine machine = new VendingMachine();
+            machine.guid = new Guid();
+
+            Console.WriteLine("type name of machine");
+
+            string connetionString = "Data Source=DESKTOP-BVGJEU8;Initial Catalog=DavidVendingMachine;persist security info=True;Integrated Security = SSPI;";//User ID=sa;Password=GreatMinds110";
+            var connection = new SqlConnection(connetionString);
+
+            var registerCommand = new SqlCommand("vend.Register", connection);
+            registerCommand.CommandType = System.Data.CommandType.StoredProcedure;
+            registerCommand.Parameters.Add(new SqlParameter("@machineID", machine.guid));
+            registerCommand.Parameters.Add(new SqlParameter("@name", Console.ReadLine()));
+
+            try
+            {
+                connection.Open();
+                registerCommand.ExecuteNonQuery();
+                connection.Close();
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine(ex.ToString());
+            }
 
             Console.WriteLine("Type 0 to move on, -1 to get change, -2 to manage coin inventory");
 
